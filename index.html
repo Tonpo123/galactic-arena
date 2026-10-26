@@ -1,470 +1,1229 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Galactic Arena</title>
-    <style>
-      :root {
-        --bg-1: #040814;
-        --bg-2: #0d1732;
-        --border: rgba(164, 180, 255, 0.35);
-        --blue: #67d8ff;
-        --blue-2: #4aa7ff;
-        --red: #ff7373;
-        --red-2: #ff4d6d;
-        --gold: #ffd166;
-        --text: #edf6ff;
-        --shadow: rgba(0, 0, 0, 0.45);
-      }
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080b19">
+<title>Galactic Arena — Saber Duels</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #080b19;
+    --panel: #11182b;
+    --text: #edf6ff;
+    --muted: #a7b7d0;
+    --cyan: #52edff;
+    --pink: #ff65bb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at 15% 0%, #153050 0%, transparent 48%),
+      radial-gradient(ellipse at 90% 90%, #33123c 0%, transparent 45%),
+      var(--bg);
+    color: var(--text);
+    font: 15px/1.5 system-ui, sans-serif;
+  }
+  button, select, input { font: inherit; }
+  button, select {
+    color: var(--text);
+    background: #202d46;
+    border: 1px solid #526786;
+    border-radius: 10px;
+    padding: 10px 15px;
+  }
+  button { cursor: pointer; font-weight: 750; }
+  button:hover { background: #304464; }
+  button:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 3px solid #ffe38a;
+    outline-offset: 4px;
+  }
+  .primary {
+    background: #84f3ff;
+    color: #071321;
+    border: 0;
+    box-shadow: 0 0 28px #52edff30;
+  }
+  .primary:hover { background: #b9f8ff; }
+  .app { width: min(1180px, 100%); margin: auto; padding: 18px; }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+  h1 { font-size: clamp(22px, 4vw, 34px); margin: 0; letter-spacing: 3px; }
+  h2 { margin: 0 0 10px; font-size: clamp(25px, 5vw, 42px); }
+  p { margin: 8px 0; }
+  .eyebrow {
+    color: var(--cyan);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 3px;
+  }
+  .muted { color: var(--muted); }
+  .top-actions { display: flex; gap: 8px; }
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 18px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .fighter {
+    padding: 12px 15px;
+    border: 1px solid #ffffff20;
+    background: #0a1022c9;
+    border-radius: 13px;
+  }
+  .fighter.p1 { border-top: 3px solid var(--cyan); }
+  .fighter.p2 { border-top: 3px solid var(--pink); }
+  .name-row { display: flex; justify-content: space-between; gap: 12px; }
+  .bar {
+    height: 9px;
+    overflow: hidden;
+    border-radius: 20px;
+    background: #ffffff14;
+    margin-top: 7px;
+  }
+  .bar.small { height: 5px; }
+  .bar > div { height: 100%; width: 100%; }
+  .p1 .health { background: var(--cyan); }
+  .p2 .health { background: var(--pink); }
+  .energy { background: #ffe38a; }
+  .status { margin-top: 6px; font-size: 11px; color: var(--muted); min-height: 17px; }
+  .score { text-align: center; min-width: 100px; }
+  .score strong { display: block; font-size: 31px; letter-spacing: 7px; }
+  .stage {
+    position: relative;
+    border-radius: 17px;
+    overflow: hidden;
+    border: 1px solid #4e6584;
+    background: #080b19;
+    box-shadow: 0 20px 90px #0008;
+  }
+  canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: auto;
+    padding: 18px;
+    background: #030715cb;
+    backdrop-filter: blur(8px);
+  }
+  .overlay[hidden] { display: none; }
+  .card {
+    width: min(630px, 100%);
+    text-align: center;
+    padding: 22px;
+    border: 1px solid #526b9355;
+    border-radius: 18px;
+    background: #111a2aed;
+  }
+  .settings {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 12px 18px;
+    margin: 18px 0;
+  }
+  .settings label { display: flex; gap: 7px; align-items: center; }
+  .buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .help {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .help > div {
+    background: #101a2bcc;
+    border: 1px solid #ffffff16;
+    border-radius: 12px;
+    padding: 13px;
+  }
+  kbd {
+    display: inline-block;
+    border: 1px solid #60718c;
+    border-bottom-width: 3px;
+    background: #202b40;
+    color: white;
+    border-radius: 5px;
+    padding: 1px 6px;
+    font: 12px system-ui;
+    margin: 2px 1px;
+  }
+  footer { margin-top: 12px; text-align: center; color: var(--muted); font-size: 12px; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0;
+    margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+    white-space: nowrap; border: 0;
+  }
+  @media (max-width: 700px) {
+    .app { padding: 8px; }
+    header { flex-wrap: wrap; }
+    .hud { gap: 6px; }
+    .fighter { padding: 8px; }
+    .score { min-width: 65px; }
+    .score strong { font-size: 23px; }
+    .name-row { font-size: 12px; }
+    .help { grid-template-columns: 1fr; }
+    .card { padding: 14px; }
+    .card p { font-size: 13px; }
+    .overlay { align-items: start; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <div>
+      <div class="eyebrow">LOCAL TWO-PLAYER ARCADE</div>
+      <h1>GALACTIC ARENA</h1>
+    </div>
+    <div class="top-actions">
+      <button id="pauseButton" aria-label="Pause or resume game">Pause / Esc</button>
+      <button id="soundButton" aria-pressed="true">Sound: On</button>
+    </div>
+  </header>
 
-      * { box-sizing: border-box; }
+  <section class="hud" aria-label="Match scoreboard">
+    <div class="fighter p1">
+      <div class="name-row"><b>P1 · CYAN</b><span id="hp0">100 HP</span></div>
+      <div class="bar"><div id="health0" class="health"></div></div>
+      <div class="bar small"><div id="energy0" class="energy"></div></div>
+      <div id="status0" class="status">Ready</div>
+    </div>
+    <div class="score">
+      <span id="roundLabel" class="muted">FIRST TO 3</span>
+      <strong id="score">0 : 0</strong>
+      <span id="clock">00:00</span>
+    </div>
+    <div class="fighter p2">
+      <div class="name-row"><b>P2 · PINK</b><span id="hp1">100 HP</span></div>
+      <div class="bar"><div id="health1" class="health"></div></div>
+      <div class="bar small"><div id="energy1" class="energy"></div></div>
+      <div id="status1" class="status">Ready</div>
+    </div>
+  </section>
 
-      html, body {
-        margin: 0;
-        height: 100%;
-        font-family: Arial, Helvetica, sans-serif;
-        background:
-          radial-gradient(circle at 20% 20%, rgba(98, 134, 255, 0.15), transparent 20%),
-          radial-gradient(circle at 80% 10%, rgba(255, 94, 127, 0.15), transparent 18%),
-          linear-gradient(180deg, var(--bg-1), var(--bg-2));
-        color: var(--text);
-      }
+  <section class="stage" aria-label="Game arena">
+    <canvas id="game" width="1280" height="720"
+      aria-label="Two-player arena. Player one moves with WASD and attacks with E.
+      Player two moves with arrow keys and attacks with Shift."
+      aria-describedby="controls">
+      This game requires a browser with HTML canvas support.
+    </canvas>
 
-      body {
-        display: grid;
-        place-items: center;
-      }
+    <div class="overlay" id="overlay">
+      <div class="card">
+        <div class="eyebrow">SABER DUELS · REACTOR SECTOR</div>
+        <h2 id="menuTitle">Own the arena.</h2>
+        <p id="menuText">
+          Two rivals. One keyboard. Chain strikes, clash blades, and dash
+          clear before the reactor overloads.
+        </p>
 
-      #game-shell {
-        width: min(92vw, 1000px);
-      }
-
-      #hud {
-        display: flex;
-        align-items: end;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 14px;
-      }
-
-      .player-panel {
-        flex: 1;
-      }
-
-      .player-label {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      .health-bar-wrap {
-        background: rgba(255,255,255,0.06);
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        height: 18px;
-        overflow: hidden;
-      }
-
-      .health-bar {
-        height: 100%;
-        width: 100%;
-        border-radius: inherit;
-        transition: width 0.14s ease;
-      }
-
-      .p1 .health-bar {
-        background: linear-gradient(90deg, var(--blue), var(--blue-2));
-      }
-
-      .p2 .health-bar {
-        background: linear-gradient(90deg, var(--red), var(--red-2));
-      }
-
-      #status {
-        min-width: 190px;
-        text-align: center;
-        font-size: 13px;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        font-weight: 800;
-        color: var(--gold);
-        text-shadow: 0 0 10px rgba(255, 209, 102, 0.7);
-      }
-
-      #arena {
-        position: relative;
-        width: 100%;
-        height: 560px;
-        overflow: hidden;
-        background:
-          linear-gradient(180deg, rgba(17, 25, 44, 0.24), rgba(7, 10, 19, 0.75)),
-          radial-gradient(circle at center, rgba(118, 163, 255, 0.16), transparent 30%),
-          linear-gradient(180deg, #070d18, #0a1222 40%, #070d18);
-        border: 2px solid var(--border);
-        border-radius: 22px;
-        box-shadow: 0 30px 70px var(--shadow), inset 0 0 30px rgba(120, 146, 255, 0.08);
-      }
-
-      .fighter {
-        position: absolute;
-        width: 42px;
-        height: 42px;
-        transform: translate(-50%, -50%);
-        border-radius: 50%;
-        box-shadow: 0 0 20px rgba(255,255,255,0.18);
-      }
-
-      .fighter .core {
-        position: absolute;
-        inset: 8px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.14);
-        border: 1px solid rgba(255,255,255,0.18);
-      }
-
-      .fighter.p1 {
-        background: radial-gradient(circle at 30% 30%, #d7f8ff, #4bb3ff 56%, #143a72 100%);
-        border: 3px solid rgba(119, 228, 255, 0.9);
-      }
-
-      .fighter.p2 {
-        background: radial-gradient(circle at 30% 30%, #ffd3d3, #ff6a6a 56%, #6d1d29 100%);
-        border: 3px solid rgba(255, 145, 145, 0.9);
-      }
-
-      .fighter .saber {
-        position: absolute;
-        left: 18px;
-        top: 18px;
-        width: 72px;
-        height: 8px;
-        border-radius: 999px;
-        transform-origin: left center;
-        display: none;
-        box-shadow: 0 0 12px rgba(255,255,255,0.8), 0 0 21px rgba(140, 210, 255, 0.65);
-      }
-
-      .fighter.p1 .saber {
-        background: linear-gradient(90deg, #b5f7ff, #ffffff);
-      }
-
-      .fighter.p2 .saber {
-        background: linear-gradient(90deg, #ffd0d0, #fff3f3);
-      }
-
-      .fighter.attacking .saber {
-        display: block;
-      }
-
-      .medkit {
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        border-radius: 5px;
-        background: linear-gradient(135deg, #a9ffd7, #49d77d);
-        transform: translate(-50%, -50%) rotate(45deg);
-        border: 2px solid rgba(11, 55, 27, 0.8);
-        box-shadow: 0 0 18px rgba(123, 247, 163, 0.8);
-      }
-
-      .medkit::before,
-      .medkit::after {
-        content: "";
-        position: absolute;
-        background: rgba(10, 44, 20, 0.9);
-        border-radius: 2px;
-      }
-
-      .medkit::before {
-        width: 2px;
-        height: 12px;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-      }
-
-      .medkit::after {
-        width: 12px;
-        height: 2px;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-      }
-    </style>
-  </head>
-  <body>
-    <div id="game-shell">
-      <div id="hud">
-        <div class="player-panel p1">
-          <div class="player-label">
-            <span>Player 1</span>
-            <span id="p1-health-text">100</span>
-          </div>
-          <div class="health-bar-wrap">
-            <div class="health-bar" id="p1-health"></div>
-          </div>
+        <div id="setup" class="settings">
+          <label>Win target
+            <select id="target">
+              <option value="3">First to 3</option>
+              <option value="5">First to 5</option>
+              <option value="7">First to 7</option>
+            </select>
+          </label>
+          <label>Theme
+            <select id="theme">
+              <option value="0">Neon station</option>
+              <option value="1">Ember foundry</option>
+              <option value="2">Deep space</option>
+            </select>
+          </label>
         </div>
 
-        <div id="status">Fight!</div>
-
-        <div class="player-panel p2">
-          <div class="player-label">
-            <span>Player 2</span>
-            <span id="p2-health-text">100</span>
-          </div>
-          <div class="health-bar-wrap">
-            <div class="health-bar" id="p2-health"></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="arena">
-        <div id="p1" class="fighter p1">
-          <div class="core"></div>
-          <div class="saber"></div>
+        <div class="settings">
+          <label><input id="shake" type="checkbox" checked> Screen shake</label>
+          <label><input id="motion" type="checkbox"> Reduced effects</label>
         </div>
 
-        <div id="p2" class="fighter p2">
-          <div class="core"></div>
-          <div class="saber"></div>
+        <p><b>P1:</b> WASD move · <b>E attack</b> · Q dash · R block</p>
+        <p><b>P2:</b> Arrows move · <b>Shift attack</b> · / dash · . block</p>
+        <p class="muted">Desktop / laptop with a keyboard. Local multiplayer, not online.</p>
+
+        <div class="buttons" style="margin-top:18px">
+          <button id="startButton" class="primary">Start duel</button>
+          <button id="resumeButton" hidden>Resume</button>
         </div>
+        <p id="record" class="muted" style="margin-top:14px"></p>
       </div>
     </div>
+  </section>
 
-    <script>
-      const arena = document.getElementById("arena");
-      const statusEl = document.getElementById("status");
-      const p1Health = document.getElementById("p1-health");
-      const p2Health = document.getElementById("p2-health");
-      const p1HealthText = document.getElementById("p1-health-text");
-      const p2HealthText = document.getElementById("p2-health-text");
+  <section class="help" id="controls" aria-label="Keyboard controls and game rules">
+    <div>
+      <b style="color:var(--cyan)">PLAYER 1</b><br>
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move
+      · <kbd>E</kbd> Attack
+      · <kbd>Q</kbd> Dash
+      · Hold <kbd>R</kbd> Block
+    </div>
+    <div>
+      <b style="color:var(--pink)">PLAYER 2</b><br>
+      <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> Move
+      · <kbd>Shift</kbd> Attack
+      · <kbd>/</kbd> Dash
+      · Hold <kbd>.</kbd> Block
+    </div>
+    <div>
+      <b>WIN THE DUEL</b><br>
+      Hold attack for a three-strike chain. The third strike hits harder.
+      Blocking drains stamina; an empty guard breaks. Dash through danger.
+      Pillars stop movement and saber hits.
+    </div>
+    <div>
+      <b>WATCH THE FLOOR</b><br>
+      Reactor warnings precede damage. After 30 seconds, the safe zone shrinks.
+      Pickups: <b>+</b> health, <b>S</b> shield, <b>V</b> speed,
+      <b>O</b> overdrive. <kbd>Esc</kbd> pauses; <kbd>M</kbd> toggles sound.
+    </div>
+  </section>
+  <footer>
+    No external assets · No tracking · Match totals stay in this browser.
+    Some keyboards limit simultaneous key presses.
+  </footer>
+  <div id="announcer" class="sr-only" aria-live="polite"></div>
+</main>
 
-      const arenaWidth = 1000;
-      const arenaHeight = 560;
+<script>
+"use strict";
+(() => {
+  const $ = id => document.getElementById(id);
+  const canvas = $("game");
+  const ctx = canvas.getContext("2d");
+  const W = 1280, H = 720, TAU = Math.PI * 2;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const angleDelta = (a, b) => Math.atan2(Math.sin(a-b), Math.cos(a-b));
 
-      const p1 = {
-        element: document.getElementById("p1"),
-        x: 180,
-        y: 280,
-        radius: 21,
-        speed: 220,
-        health: 100,
-        attackCooldown: 0,
-        attackTimer: 0,
-        facingX: 1,
-        facingY: 0,
-        name: "Player 1"
-      };
+  const themes = [
+    { bg: "#080e20", grid: "#16324b", accent: "#47d8e9", core: "#ffb454" },
+    { bg: "#1b0c17", grid: "#49212f", accent: "#ff9b65", core: "#ffe180" },
+    { bg: "#08091b", grid: "#28204c", accent: "#b294ff", core: "#7ffff1" }
+  ];
 
-      const p2 = {
-        element: document.getElementById("p2"),
-        x: 820,
-        y: 280,
-        radius: 21,
-        speed: 220,
-        health: 100,
-        attackCooldown: 0,
-        attackTimer: 0,
-        facingX: -1,
-        facingY: 0,
-        name: "Player 2"
-      };
+  const pillars = [
+    { x: 420, y: 220, r: 37 },
+    { x: 860, y: 220, r: 37 },
+    { x: 420, y: 500, r: 37 },
+    { x: 860, y: 500, r: 37 }
+  ];
 
-      let medkits = [];
-      let lastSpawnTime = 0;
-      let gameOver = false;
-      let roundDelay = 0;
-      const keys = {};
+  const stars = Array.from({ length: 100 }, () => ({
+    x: rand(0, W), y: rand(0, H), r: rand(.6, 1.8), phase: rand(0, TAU)
+  }));
 
-      document.addEventListener("keydown", (event) => {
-        keys[event.code] = true;
+  const bindings = [
+    { up:"KeyW", down:"KeyS", left:"KeyA", right:"KeyD",
+      attack:["KeyE"], dash:"KeyQ", block:"KeyR" },
+    { up:"ArrowUp", down:"ArrowDown", left:"ArrowLeft", right:"ArrowRight",
+      attack:["ShiftLeft","ShiftRight"], dash:"Slash", block:"Period" }
+  ];
+
+  const gameKeys = new Set([
+    ...bindings.flatMap(b => [
+      b.up, b.down, b.left, b.right, ...b.attack, b.dash, b.block
+    ]), "Escape", "KeyM"
+  ]);
+
+  const keys = new Set();
+  const taps = new Set();
+  const particles = [];
+  const labels = [];
+  let pickups = [];
+  let players = [];
+  let state = "menu";
+  let previousState = "play";
+  let scores = [0, 0];
+  let target = 3;
+  let themeIndex = 0;
+  let elapsed = 0;
+  let countdown = 3;
+  let intermission = 0;
+  let pickupTimer = 5;
+  let shakeAmount = 0;
+  let banner = "";
+  let bannerTime = 0;
+  let winnerText = "";
+  let visualTime = 0;
+  let audio = null;
+  let sound = true;
+
+  let records = [0, 0];
+  try {
+    const stored = JSON.parse(localStorage.getItem("galactic-arena-wins-v1"));
+    if (Array.isArray(stored) && stored.length === 2 &&
+        stored.every(n => Number.isSafeInteger(n) && n >= 0)) records = stored;
+  } catch {}
+
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  $("motion").checked = reduced;
+  $("shake").checked = !reduced;
+
+  function announce(message) {
+    $("announcer").textContent = message;
+  }
+
+  function updateRecords() {
+    $("record").textContent =
+      `Saved match wins — Cyan: ${records[0]} · Pink: ${records[1]}`;
+  }
+  updateRecords();
+
+  function unlockAudio() {
+    try {
+      if (!audio) {
+        const AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass) audio = new AudioClass();
+      }
+      if (audio?.state === "suspended") audio.resume().catch(() => {});
+    } catch {}
+  }
+
+  function tone(freq, duration = .1, type = "sine", volume = .035, end = freq) {
+    if (!sound || !audio || audio.state !== "running") return;
+    try {
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      const now = audio.currentTime;
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, end), now + duration);
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.exponentialRampToValueAtTime(.001, now + duration);
+      osc.connect(gain);
+      gain.connect(audio.destination);
+      osc.start(now);
+      osc.stop(now + duration);
+      osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+    } catch {}
+  }
+
+  function toggleSound() {
+    sound = !sound;
+    $("soundButton").textContent = `Sound: ${sound ? "On" : "Off"}`;
+    $("soundButton").setAttribute("aria-pressed", String(sound));
+    if (sound) unlockAudio();
+  }
+
+  function burst(x, y, color, count = 20, force = 180) {
+    count = $("motion").checked ? Math.min(count, 5) : count;
+    for (let i = 0; i < count && particles.length < 450; i++) {
+      const a = rand(0, TAU), speed = rand(30, force);
+      const life = rand(.18, .6);
+      particles.push({
+        x, y, vx: Math.cos(a)*speed, vy: Math.sin(a)*speed,
+        life, max: life, color, r: rand(1.5, 4)
       });
+    }
+  }
 
-      document.addEventListener("keyup", (event) => {
-        keys[event.code] = false;
-      });
+  function floatText(x, y, text, color = "#fff") {
+    labels.push({ x, y, text, color, life: 1, max: 1 });
+    if (labels.length > 35) labels.shift();
+  }
 
-      function clamp(value, min, max) {
-        return Math.min(Math.max(value, min), max);
+  function message(text, time = 2) {
+    banner = text;
+    bannerTime = time;
+    announce(text);
+  }
+
+  function shake(amount) {
+    if ($("shake").checked && !$("motion").checked) {
+      shakeAmount = Math.max(shakeAmount, amount);
+    }
+  }
+
+  function createPlayer(i) {
+    return {
+      i, x: i === 0 ? 240 : 1040, y: 360, r: 21,
+      color: i === 0 ? "#52edff" : "#ff65bb",
+      hp: 100, stamina: 100, facing: i === 0 ? 0 : Math.PI,
+      vx: 0, vy: 0, dashX: 0, dashY: 0,
+      dash: 0, dashCooldown: 0, invulnerable: 0,
+      attackCooldown: 0, swing: null, combo: 0, comboTimer: 0,
+      block: false, stun: 0, flash: 0,
+      shield: 0, speed: 0, overdrive: 0
+    };
+  }
+
+  function startRound() {
+    players = [createPlayer(0), createPlayer(1)];
+    elapsed = 0;
+    countdown = 3;
+    pickups = [];
+    pickupTimer = 5;
+    particles.length = 0;
+    labels.length = 0;
+    keys.clear();
+    taps.clear();
+    shakeAmount = 0;
+    bannerTime = 0;
+    state = "countdown";
+    $("overlay").hidden = true;
+    announce("Round ready. Three, two, one.");
+  }
+
+  function startMatch() {
+    unlockAudio();
+    target = Number($("target").value);
+    themeIndex = Number($("theme").value);
+    scores = [0, 0];
+    $("startButton").blur();
+    startRound();
+  }
+
+  function showMenu(title, text, canResume = false) {
+    $("menuTitle").textContent = title;
+    $("menuText").textContent = text;
+    $("setup").hidden = canResume;
+    $("resumeButton").hidden = !canResume;
+    $("startButton").textContent = canResume ? "Restart match" : "Start duel";
+    $("overlay").hidden = false;
+    updateRecords();
+    (canResume ? $("resumeButton") : $("startButton")).focus();
+  }
+
+  function togglePause() {
+    if (state === "paused") {
+      state = previousState;
+      $("overlay").hidden = true;
+      keys.clear();
+      taps.clear();
+      $("resumeButton").blur();
+      return;
+    }
+    if (!["play", "countdown", "roundover"].includes(state)) return;
+    previousState = state;
+    state = "paused";
+    keys.clear();
+    taps.clear();
+    showMenu("Duel paused", "Take a breath. The arena can wait.", true);
+    announce("Paused");
+  }
+
+  $("startButton").addEventListener("click", startMatch);
+  $("resumeButton").addEventListener("click", togglePause);
+  $("pauseButton").addEventListener("click", () => {
+    togglePause();
+    $("pauseButton").blur();
+  });
+  $("soundButton").addEventListener("click", () => {
+    toggleSound();
+    $("soundButton").blur();
+  });
+  $("theme").addEventListener("change", () => {
+    if (state === "menu" || state === "matchover") {
+      themeIndex = Number($("theme").value);
+    }
+  });
+
+  window.addEventListener("keydown", e => {
+    if (!gameKeys.has(e.code)) return;
+    const editing = ["SELECT", "INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
+    if (editing) return;
+    if (["play", "countdown", "roundover"].includes(state)) e.preventDefault();
+    if (e.repeat) return;
+    unlockAudio();
+    if (e.code === "Escape") { togglePause(); return; }
+    if (e.code === "KeyM") { toggleSound(); return; }
+    if (state !== "play") return;
+    if (!keys.has(e.code)) taps.add(e.code);
+    keys.add(e.code);
+  });
+
+  window.addEventListener("keyup", e => keys.delete(e.code));
+
+  function focusLost() {
+    keys.clear();
+    taps.clear();
+    if (["play", "countdown", "roundover"].includes(state)) togglePause();
+  }
+  window.addEventListener("blur", focusLost);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) focusLost();
+  });
+
+  function constrain(p) {
+    p.x = clamp(p.x, 30 + p.r, W - 30 - p.r);
+    p.y = clamp(p.y, 30 + p.r, H - 30 - p.r);
+    for (const wall of pillars) {
+      const dx = p.x-wall.x, dy = p.y-wall.y;
+      const d = Math.hypot(dx, dy), minimum = p.r + wall.r;
+      if (d < minimum) {
+        const nx = d > .001 ? dx/d : 1;
+        const ny = d > .001 ? dy/d : 0;
+        p.x = wall.x + nx*minimum;
+        p.y = wall.y + ny*minimum;
       }
+    }
+  }
 
-      function updateHud() {
-        p1Health.style.width = `${p1.health}%`;
-        p2Health.style.width = `${p2.health}%`;
-        p1HealthText.textContent = Math.max(0, Math.round(p1.health));
-        p2HealthText.textContent = Math.max(0, Math.round(p2.health));
+  function obstructed(a, b) {
+    const dx = b.x-a.x, dy = b.y-a.y;
+    const lengthSq = dx*dx + dy*dy || 1;
+    return pillars.some(o => {
+      const t = clamp(((o.x-a.x)*dx + (o.y-a.y)*dy)/lengthSq, 0, 1);
+      return Math.hypot(a.x+t*dx-o.x, a.y+t*dy-o.y) < o.r;
+    });
+  }
+
+  function beginAttack(p) {
+    if (p.stamina < 17 || p.attackCooldown > 0 ||
+        p.stun > 0 || p.block || p.dash > 0) return;
+    p.combo = p.comboTimer > 0 ? p.combo % 3 + 1 : 1;
+    p.comboTimer = .95;
+    p.stamina -= 17;
+    const duration = p.overdrive > 0 ? .25 : .32;
+    p.attackCooldown = p.overdrive > 0 ? .29 : .39;
+    p.swing = {
+      t: duration, duration, angle: p.facing,
+      combo: p.combo, hit: false
+    };
+    tone(260 + p.combo*110, .12, "sawtooth", .018, 80);
+  }
+
+  function updatePlayer(p, dt) {
+    const other = players[1-p.i];
+    const b = bindings[p.i];
+
+    for (const name of [
+      "dashCooldown", "invulnerable", "attackCooldown", "comboTimer",
+      "stun", "flash", "shield", "speed", "overdrive"
+    ]) p[name] = Math.max(0, p[name]-dt);
+
+    if (p.swing) {
+      p.swing.t -= dt;
+      if (p.swing.t <= 0) p.swing = null;
+    }
+
+    p.facing = Math.atan2(other.y-p.y, other.x-p.x);
+    p.block = keys.has(b.block) && p.stun <= 0 &&
+      p.dash <= 0 && !p.swing && p.stamina > 0;
+
+    let mx = Number(keys.has(b.right)) - Number(keys.has(b.left));
+    let my = Number(keys.has(b.down)) - Number(keys.has(b.up));
+    const mag = Math.hypot(mx, my);
+    if (mag) { mx /= mag; my /= mag; }
+
+    if (taps.has(b.dash) && p.dashCooldown <= 0 &&
+        p.stamina >= 28 && p.stun <= 0 && p.dash <= 0) {
+      p.dash = .17;
+      p.invulnerable = .17;
+      p.dashCooldown = 1.15;
+      p.stamina -= 28;
+      p.dashX = mag ? mx : Math.cos(p.facing);
+      p.dashY = mag ? my : Math.sin(p.facing);
+      p.block = false;
+      p.swing = null;
+      burst(p.x, p.y, p.color, 12, 100);
+      tone(110, .12, "triangle", .035, 550);
+    }
+
+    if (b.attack.some(key => keys.has(key))) beginAttack(p);
+
+    if (p.dash > 0) {
+      // Integrate only the remaining dash duration, independent of frame rate.
+      const dashStep = Math.min(dt, p.dash);
+      p.x += p.dashX * 790 * dashStep;
+      p.y += p.dashY * 790 * dashStep;
+      p.dash -= dashStep;
+    } else {
+      const speed = (p.speed > 0 ? 310 : 235) *
+        (p.block ? .45 : 1) * (p.stun > 0 ? .18 : 1);
+      p.x += mx * speed * dt;
+      p.y += my * speed * dt;
+    }
+
+    p.x += p.vx*dt;
+    p.y += p.vy*dt;
+    p.vx *= Math.exp(-12*dt);
+    p.vy *= Math.exp(-12*dt);
+    constrain(p);
+
+    const regen = p.block ? 0 : p.swing ? 5 : 23;
+    p.stamina = clamp(p.stamina + regen*dt, 0, 100);
+    if (p.block) {
+      p.stamina = Math.max(0, p.stamina-7*dt);
+      if (p.stamina === 0) { p.block = false; p.stun = .7; }
+    }
+  }
+
+  function separatePlayers() {
+    const [a, b] = players;
+    if (a.dash > 0 || b.dash > 0) return;
+    const dx = b.x-a.x, dy = b.y-a.y;
+    const d = Math.hypot(dx, dy);
+    const minimum = a.r+b.r;
+    if (d >= minimum) return;
+    const nx = d > .001 ? dx/d : 1;
+    const ny = d > .001 ? dy/d : 0;
+    const shift = (minimum-d)/2;
+    a.x -= nx*shift; a.y -= ny*shift;
+    b.x += nx*shift; b.y += ny*shift;
+    constrain(a); constrain(b);
+  }
+
+  function activeSwing(p) {
+    if (!p.swing || p.swing.hit) return false;
+    const progress = 1-p.swing.t/p.swing.duration;
+    return progress >= .2 && progress <= .83;
+  }
+
+  function canHit(a, b) {
+    if (!activeSwing(a) || b.invulnerable > 0) return false;
+    if (distance(a, b) > 114) return false;
+    const toward = Math.atan2(b.y-a.y, b.x-a.x);
+    if (Math.abs(angleDelta(toward, a.swing.angle)) > 1.25) return false;
+    return !obstructed(a, b);
+  }
+
+  function applyHit(a, b, combo) {
+    const direction = Math.atan2(b.y-a.y, b.x-a.x);
+    let damage = [0, 14, 18, 26][combo];
+    let knockback = combo === 3 ? 360 : 210;
+
+    const facingAttacker = Math.atan2(a.y-b.y, a.x-b.x);
+    const guarding = b.block &&
+      Math.abs(angleDelta(facingAttacker, b.facing)) < 1.3;
+
+    if (guarding) {
+      const cost = combo === 3 ? 35 : 24;
+      b.stamina = Math.max(0, b.stamina-cost);
+      if (b.stamina <= 0) {
+        b.stun = .85;
+        b.block = false;
+        damage *= .7;
+        floatText(b.x, b.y-44, "GUARD BREAK", "#ffe38a");
+        tone(100, .24, "sawtooth", .045, 30);
+        shake(9);
+      } else {
+        damage = 0;
+        knockback = 95;
+        floatText(b.x, b.y-38, "BLOCK", "#c6e8ff");
+        tone(700, .08, "square", .018, 260);
       }
+    }
 
-      function setVisual(player) {
-        player.element.style.left = `${player.x}px`;
-        player.element.style.top = `${player.y}px`;
+    if (b.shield > 0) damage *= .5;
+    b.hp = Math.max(0, b.hp-damage);
+    b.flash = .15;
+    b.vx += Math.cos(direction)*knockback;
+    b.vy += Math.sin(direction)*knockback;
+    burst((a.x+b.x)/2, (a.y+b.y)/2, damage ? a.color : "#fff3ba",
+      combo === 3 ? 32 : 18, 260);
 
-        const saber = player.element.querySelector(".saber");
-        const angle = Math.atan2(player.facingY, player.facingX) * (180 / Math.PI);
-        saber.style.transform = `rotate(${angle}deg)`;
+    if (damage > 0) {
+      floatText(b.x, b.y-30, `−${Math.round(damage)}`, "#ffffff");
+      shake(combo === 3 ? 8 : 4);
+      tone(140, .13, "triangle", .065, 40);
+    }
+  }
 
-        player.element.classList.toggle("attacking", player.attackTimer > 0);
+  function resolveCombat() {
+    const [a, b] = players;
+    const hitA = canHit(a, b);
+    const hitB = canHit(b, a);
+
+    if (hitA && hitB) {
+      a.swing.hit = true;
+      b.swing.hit = true;
+      const direction = Math.atan2(b.y-a.y, b.x-a.x);
+      a.vx -= Math.cos(direction)*270;
+      a.vy -= Math.sin(direction)*270;
+      b.vx += Math.cos(direction)*270;
+      b.vy += Math.sin(direction)*270;
+      burst((a.x+b.x)/2, (a.y+b.y)/2, "#ffffff", 40, 340);
+      floatText((a.x+b.x)/2, (a.y+b.y)/2-45, "CLASH!", "#ffe38a");
+      tone(900, .18, "triangle", .055, 150);
+      shake(7);
+      return;
+    }
+
+    if (hitA) {
+      const combo = a.swing.combo;
+      a.swing.hit = true;
+      applyHit(a, b, combo);
+    }
+    if (hitB) {
+      const combo = b.swing.combo;
+      b.swing.hit = true;
+      applyHit(b, a, combo);
+    }
+  }
+
+  function safeRadius() {
+    return Math.max(65, 680-Math.max(0, elapsed-30)*15);
+  }
+
+  function reactor() {
+    if (elapsed < 6) return { warning: false, active: false };
+    const cycle = (elapsed-6)%11;
+    return { warning: cycle < 1.6, active: cycle >= 1.6 && cycle < 3.6 };
+  }
+
+  function spawnPickup() {
+    if (pickups.length >= 3) return;
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const p = { x: rand(115, W-115), y: rand(100, H-100) };
+      if (pillars.some(o => distance(p, o) < o.r+35)) continue;
+      const centerDistance = Math.hypot(p.x-W/2, p.y-H/2);
+      if (centerDistance < 145 || centerDistance > safeRadius()-25) continue;
+      if (pickups.some(o => distance(p, o) < 65)) continue;
+      p.type = ["heal","shield","speed","overdrive"][Math.floor(rand(0,4))];
+      p.life = 14;
+      pickups.push(p);
+      return;
+    }
+  }
+
+  const pickupInfo = {
+    heal: { color: "#71ffa1", glyph: "+", label: "+25 HEALTH" },
+    shield: { color: "#8cbbff", glyph: "S", label: "SHIELD · 8s" },
+    speed: { color: "#ffe38a", glyph: "V", label: "SPEED · 7s" },
+    overdrive: { color: "#dfa1ff", glyph: "O", label: "OVERDRIVE · 7s" }
+  };
+
+  function updateWorld(dt) {
+    const radius = safeRadius();
+    const core = reactor();
+
+    for (const p of players) {
+      // Environmental damage bypasses dash protection and shields.
+      if (elapsed > 30 && Math.hypot(p.x-W/2, p.y-H/2) > radius) {
+        p.hp = Math.max(0, p.hp-(elapsed > 70 ? 32 : 15)*dt);
       }
-
-      function spawnMedkit() {
-        const x = 150 + Math.random() * (arenaWidth - 300);
-        const y = 120 + Math.random() * (arenaHeight - 220);
-        const medkit = {
-          x,
-          y,
-          pulse: 0,
-          elem: document.createElement("div")
-        };
-
-        medkit.elem.className = "medkit";
-        medkit.elem.style.left = `${x}px`;
-        medkit.elem.style.top = `${y}px`;
-        arena.appendChild(medkit.elem);
-
-        medkits.push(medkit);
+      if (core.active && Math.hypot(p.x-W/2, p.y-H/2) < 118+p.r) {
+        p.hp = Math.max(0, p.hp-23*dt);
       }
+    }
 
-      function updateMedkits() {
-        if (performance.now() - lastSpawnTime > 5000 && medkits.length < 4) {
-          lastSpawnTime = performance.now();
-          spawnMedkit();
-        }
+    pickupTimer -= dt;
+    if (pickupTimer <= 0) { spawnPickup(); pickupTimer = 6; }
 
-        for (let i = medkits.length - 1; i >= 0; i--) {
-          const med = medkits[i];
-          med.pulse += 0.07;
+    for (let i = pickups.length-1; i >= 0; i--) {
+      const item = pickups[i];
+      item.life -= dt;
+      if (item.life <= 0) { pickups.splice(i, 1); continue; }
+      // Pick the nearest eligible player rather than always favoring P1.
+      const candidates = players.filter(p => distance(p, item) < p.r+20)
+        .sort((a, b) => distance(a,item)-distance(b,item));
+      if (!candidates.length) continue;
+      const p = candidates[0];
+      if (item.type === "heal") p.hp = Math.min(100, p.hp+25);
+      if (item.type === "shield") p.shield = 8;
+      if (item.type === "speed") p.speed = 7;
+      if (item.type === "overdrive") { p.overdrive = 7; p.stamina = 100; }
+      const info = pickupInfo[item.type];
+      burst(item.x, item.y, info.color, 22, 180);
+      floatText(p.x, p.y-42, info.label, info.color);
+      tone(520, .22, "sine", .04, 1040);
+      pickups.splice(i, 1);
+    }
+  }
 
-          med.elem.style.transform = `translate(-50%, -50%) rotate(45deg) scale(${1 + Math.sin(med.pulse) * 0.12})`;
-          med.elem.style.filter = `drop-shadow(0 0 ${12 + Math.sin(med.pulse) * 6}px rgba(123,247,163,0.8))`;
+  function finishRound() {
+    const dead = players.map(p => p.hp <= 0);
+    if (!dead.some(Boolean)) return;
+    if (dead[0] && dead[1]) {
+      winnerText = "DOUBLE KO · ROUND DRAW";
+    } else {
+      const winner = dead[0] ? 1 : 0;
+      scores[winner]++;
+      winnerText = `${winner === 0 ? "CYAN" : "PINK"} WINS THE ROUND`;
+    }
+    state = "roundover";
+    intermission = 2.6;
+    keys.clear();
+    taps.clear();
+    announce(winnerText);
+    tone(390, .4, "triangle", .05, 780);
+  }
 
-          const d1 = Math.hypot(med.x - p1.x, med.y - p1.y);
-          const d2 = Math.hypot(med.x - p2.x, med.y - p2.y);
+  function finishMatch() {
+    const winner = scores[0] >= target ? 0 : 1;
+    state = "matchover";
+    records[winner]++;
+    try {
+      localStorage.setItem("galactic-arena-wins-v1", JSON.stringify(records));
+    } catch {}
+    showMenu(
+      `${winner === 0 ? "CYAN" : "PINK"} IS CHAMPION`,
+      `Final score: ${scores[0]} – ${scores[1]}. Switch sides or run it back.`
+    );
+    $("startButton").textContent = "Rematch";
+    announce(`${winner === 0 ? "Cyan" : "Pink"} wins the match.`);
+  }
 
-          if (d1 < 26 || d2 < 26) {
-            if (d1 <= d2) {
-              p1.health = clamp(p1.health + 18, 0, 100);
-            } else {
-              p2.health = clamp(p2.health + 18, 0, 100);
-            }
+  function updateEffects(dt) {
+    shakeAmount *= Math.exp(-15*dt);
+    bannerTime = Math.max(0, bannerTime-dt);
+    for (let i = particles.length-1; i >= 0; i--) {
+      const p = particles[i];
+      p.life -= dt;
+      p.x += p.vx*dt;
+      p.y += p.vy*dt;
+      p.vx *= Math.exp(-3*dt);
+      p.vy *= Math.exp(-3*dt);
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    for (let i = labels.length-1; i >= 0; i--) {
+      labels[i].life -= dt;
+      labels[i].y -= 32*dt;
+      if (labels[i].life <= 0) labels.splice(i, 1);
+    }
+  }
 
-            med.elem.remove();
-            medkits.splice(i, 1);
-            statusEl.textContent = "Med kit collected!";
-          }
-        }
+  function update(dt) {
+    if (["menu","paused","matchover"].includes(state)) return;
+    updateEffects(dt);
 
-        updateHud();
+    if (state === "countdown") {
+      const before = Math.ceil(countdown);
+      countdown -= dt;
+      if (Math.ceil(countdown) !== before && countdown > 0) {
+        tone(330, .08, "sine", .035);
       }
-
-      function tryAttack(attacker, defender) {
-        if (gameOver || attacker.attackCooldown > 0 || attacker.attackTimer > 0) return;
-
-        const dx = defender.x - attacker.x;
-        const dy = defender.y - attacker.y;
-        const dist = Math.hypot(dx, dy);
-
-        attacker.facingX = dist === 0 ? attacker.facingX : dx / dist;
-        attacker.facingY = dist === 0 ? attacker.facingY : dy / dist;
-
-        attacker.attackCooldown = 0.48;
-        attacker.attackTimer = 0.18;
-
-        if (dist < 82) {
-          defender.health -= 18;
-          const pushX = (dx / (dist || 1)) * 16;
-          const pushY = (dy / (dist || 1)) * 16;
-          defender.x = clamp(defender.x + pushX, 22, arenaWidth - 22);
-          defender.y = clamp(defender.y + pushY, 22, arenaHeight - 22);
-
-          if (defender.health <= 0) {
-            gameOver = true;
-            roundDelay = 1.6;
-            statusEl.textContent = `${attacker.name} wins!`;
-          } else {
-            statusEl.textContent = `${attacker.name} lands a hit!`;
-          }
-        } else {
-          statusEl.textContent = `${attacker.name} swings!`;
-        }
+      if (countdown <= 0) {
+        state = "play";
+        message("DUEL!", 1);
+        tone(660, .15, "triangle", .04, 1000);
       }
+      taps.clear();
+      return;
+    }
 
-      function resetPositions() {
-        p1.x = 180;
-        p1.y = 280;
-        p2.x = 820;
-        p2.y = 280;
-        p1.health = 100;
-        p2.health = 100;
-        p1.attackCooldown = 0;
-        p2.attackCooldown = 0;
-        p1.attackTimer = 0;
-        p2.attackTimer = 0;
-        p1.facingX = 1;
-        p1.facingY = 0;
-        p2.facingX = -1;
-        p2.facingY = 0;
-        gameOver = false;
-        statusEl.textContent = "Fight!";
-        updateHud();
-        setVisual(p1);
-        setVisual(p2);
+    if (state === "roundover") {
+      intermission -= dt;
+      if (intermission <= 0) {
+        if (scores.some(n => n >= target)) finishMatch();
+        else startRound();
       }
+      return;
+    }
 
-      function updatePlayer(player, controls, dt) {
-        let moveX = 0;
-        let moveY = 0;
+    const oldElapsed = elapsed;
+    elapsed += dt;
+    if (oldElapsed < 30 && elapsed >= 30) {
+      message("CONTAINMENT FAILING · SAFE ZONE SHRINKING", 3);
+      tone(180, .5, "sawtooth", .025, 90);
+    }
 
-        if (keys[controls.left]) moveX -= 1;
-        if (keys[controls.right]) moveX += 1;
-        if (keys[controls.up]) moveY -= 1;
-        if (keys[controls.down]) moveY += 1;
+    players.forEach(p => updatePlayer(p, dt));
+    separatePlayers();
+    resolveCombat();
+    updateWorld(dt);
+    finishRound();
+    taps.clear();
+  }
 
-        if (moveX !== 0 || moveY !== 0) {
-          const len = Math.hypot(moveX, moveY) || 1;
-          const nx = moveX / len;
-          const ny = moveY / len;
-          player.x += nx * player.speed * dt;
-          player.y += ny * player.speed * dt;
-          player.x = clamp(player.x, 22, arenaWidth - 22);
-          player.y = clamp(player.y, 22, arenaHeight - 22);
-        }
+  function circle(x, y, radius, fill, stroke = null, width = 1) {
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(0, radius), 0, TAU);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    }
+  }
 
-        if (keys[controls.attack]) {
-          if (player === p1) tryAttack(p1, p2);
-          else tryAttack(p2, p1);
-        }
+  function text(value, x, y, size = 20, color = "#fff", align = "center") {
+    ctx.fillStyle = color;
+    ctx.font = `800 ${size}px system-ui, sans-serif`;
+    ctx.textAlign = align;
+    ctx.textBaseline = "middle";
+    ctx.fillText(value, x, y);
+  }
 
-        player.attackCooldown = Math.max(0, player.attackCooldown - dt);
-        player.attackTimer = Math.max(0, player.attackTimer - dt);
+  function drawArena() {
+    const theme = themes[themeIndex];
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, W, H);
 
-        setVisual(player);
+    for (const star of stars) {
+      ctx.globalAlpha = $("motion").checked ? .5 :
+        .35 + .25*Math.sin(visualTime*.7+star.phase);
+      circle(star.x, star.y, star.r, "#c7dfff");
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = theme.grid;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 40; x < W; x += 50) {
+      ctx.moveTo(x, 30); ctx.lineTo(x, H-30);
+    }
+    for (let y = 35; y < H; y += 50) {
+      ctx.moveTo(30, y); ctx.lineTo(W-30, y);
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = theme.accent;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(30, 30, W-60, H-60);
+    ctx.globalAlpha = .2;
+    circle(W/2, H/2, 245, null, theme.accent, 2);
+    ctx.globalAlpha = 1;
+
+    const core = reactor();
+    const pulse = $("motion").checked ? .5 : .5+.5*Math.sin(visualTime*8);
+    if (core.warning || core.active) {
+      circle(W/2, H/2, 118,
+        core.active ? "#ff563344" : `rgba(255,190,70,${.08+pulse*.1})`,
+        core.active ? "#ff7655" : "#ffe38a", 3);
+      text(core.active ? "REACTOR ACTIVE" : "OVERLOAD WARNING",
+        W/2, H/2+152, 16, core.active ? "#ff9977" : "#ffe38a");
+    }
+    circle(W/2, H/2, 57, "#101629", theme.core, 3);
+    circle(W/2, H/2, 38, "#141d32", theme.accent, 2);
+    ctx.save();
+    ctx.translate(W/2, H/2);
+    if (!$("motion").checked) ctx.rotate(visualTime*.5);
+    for (let i = 0; i < 3; i++) {
+      ctx.rotate(TAU/3);
+      ctx.fillStyle = theme.core;
+      ctx.fillRect(15, -4, 27, 8);
+    }
+    ctx.restore();
+    circle(W/2, H/2, 10, "#f5f5ff");
+
+    for (const p of pillars) {
+      circle(p.x+5, p.y+8, p.r+3, "#0006");
+      circle(p.x, p.y, p.r, "#172438", theme.accent, 2);
+      circle(p.x, p.y, p.r-9, "#0c1423", "#46546a", 2);
+      ctx.fillStyle = theme.accent;
+      ctx.fillRect(p.x-12, p.y-3, 24, 6);
+    }
+
+    if (elapsed > 30) {
+      const radius = safeRadius();
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      ctx.arc(W/2, H/2, radius, 0, TAU);
+      ctx.fillStyle = "#ff355323";
+      ctx.fill("evenodd");
+      circle(W/2, H/2, radius, null, "#ff718c", 4);
+      ctx.restore();
+      text("STAY INSIDE THE RING", W/2, 53, 15, "#ffa3b6");
+    }
+  }
+
+  function drawPickups() {
+    for (const p of pickups) {
+      const info = pickupInfo[p.type];
+      const bob = $("motion").checked ? 0 : Math.sin(visualTime*3+p.x)*5;
+      ctx.save();
+      ctx.translate(p.x, p.y+bob);
+      ctx.globalAlpha = p.life < 3 ? .55 : 1;
+      ctx.rotate(Math.PI/4);
+      ctx.fillStyle = "#101b31";
+      ctx.strokeStyle = info.color;
+      ctx.lineWidth = 2;
+      ctx.fillRect(-15,-15,30,30);
+      ctx.strokeRect(-15,-15,30,30);
+      ctx.rotate(-Math.PI/4);
+      text(info.glyph, 0, 1, 23, info.color);
+      ctx.restore();
+    }
+  }
+
+  function drawPlayer(p) {
+    ctx.save();
+
+    if (p.dash > 0 && !$("motion").checked) {
+      for (let i = 4; i >= 1; i--) {
+        ctx.globalAlpha = .06*(5-i);
+        circle(p.x-p.dashX*i*13, p.y-p.dashY*i*13, p.r, p.color);
       }
+      ctx.globalAlpha = 1;
+    }
 
-      function tick() {
-        const dt = 1 / 60;
+    circle(p.x+3, p.y+7, p.r+2, "#0007");
 
-        if (gameOver) {
-          roundDelay -= dt;
-          if (roundDelay <= 0) resetPositions();
-        } else {
-          updatePlayer(p1, { left: "KeyA", right: "KeyD", up: "KeyW", down: "KeyS", attack: "KeyF" }, dt);
-          updatePlayer(p2, { left: "ArrowLeft", right: "ArrowRight", up: "ArrowUp", down: "ArrowDown", attack: "Slash" }, dt);
-        }
+    if (p.shield > 0) {
+      circle(p.x, p.y, p.r+11, "#8cbbff12", "#8cbbff", 2);
+    }
+    if (p.overdrive > 0) {
+      circle(p.x, p.y, p.r+16, null, "#dfa1ff", 2);
+    }
+    if (p.speed > 0) {
+      ctx.strokeStyle = "#ffe38a";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(p.x-12, p.y+p.r+10);
+      ctx.lineTo(p.x, p.y+p.r+5);
+      ctx.lineTo(p.x+12, p.y+p.r+10);
+      ctx.stroke();
+    }
 
-        updateMedkits();
-        requestAnimationFrame(tick);
-      }
+    circle(p.x, p.y, p.r, p.flash > 0 ? "#ffffff" : "#182b42", p.color, 3);
+    circle(
+      p.x+Math.cos(p.facing)*9,
+      p.y+Math.sin(p.facing)*9,
+      6, p.color
+    );
 
-      resetPositions();
-      spawnMedkit();
-      spawnMedkit();
-      updateHud();
-      requestAnimationFrame(tick);
-    </script>
-  </body>
+    text(`P${p.i+1}`, p.x, p.y-42, 14, p.color);
+
+    if (p.block) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 34, p.facing-1.15, p.facing+1.15);
+      ctx.strokeStyle = "#e4f3ff";
+      ctx.lineWidth = 5;
+      ctx.stroke();
+    }
+
+    const swing = p.swing;
+    let saberAngle = p.facing+.65;
+    if (swing) {
+      const progress = 1-swing.t/swing.duration;
+      const direction = swing.combo === 2 ? -1 : 1;
+      saberAngle = swing.angle+(-1.25+progress*2.5)*direction;
+      ctx.beginPath();
+      const from = saberAngle-direction*.7;
+      ctx.arc(p.x, p.y, 87, from, saberAngle, direction < 0);
+      ctx.strokeStyle = p.color;
+      ctx.globalAlpha = .22;
+      ctx.lineWidth = swing.combo === 3 ? 24 : 15;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    const startX = p.x+Math.cos(saberAngle)*24;
+    const startY = p.y+Math.sin(saberAngle)*24;
+    const endX = p.x+Math.cos(saberAngle)*(swing ? 101 : 75);
+    const endY = p.y+Math.sin(saberAngle)*(swing ? 101 : 75);
+
+    ctx.lineCap = "round";
+    if (!$("motion").checked) {
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 18;
+    }
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    if (p.stun > 0) text("STUNNED", p.x, p.y+42, 12, "#ffe38a");
+    ctx.restore();
+  }
+
+  function drawEffects() {
+    for (const p of particles) {
+      ctx.globalAlpha = clamp(p.life/p.max, 0, 1);
+      circle(p.x, p.y, p.r, p.color);
+    }
+    ctx.globalAlpha = 1;
+    for (const item of labels) {
+      ctx.globalAlpha = clamp(item.life/item.max, 0, 1);
+      text(item.text, item.x, item.y, 17, item.color);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function updateHUD() {
+    $("score").textContent = `${scores[0]} : ${scores[1]}`;
+    $("roundLabel").textContent = `FIRST TO ${target}`;
+    const seconds = Math.floor(elapsed);
+    $("clock").textContent =
+      `${String(Math.floor(seconds/60)).padStart(2,"0")}:` +
+      `${String(seconds%60).padStart(2,"0")}`;
+
+    players.forEach((p, i) => {
+      $("hp"+i).textContent = `${Math.ceil(p.hp)} HP`;
+      $("health"+i).style.width = `${p.hp}%`;
+      $("energy"+i).style.width = `${p.stamina}%`;
+      const effects = [];
+      if (p.shield > 0) effects.push(`Shield ${Math.ceil(p.shield)}s`);
+      if (p.speed > 0) effects.push(`Speed ${Math.ceil(p.speed)}s`);
+      if (p.overdrive > 0) effects.push(`Overdrive ${Math.ceil(p.overdrive)}s`);
+      if (p.stun > 0) effects.push("Guard broken");
+      effects.push(p.dashCooldown > 0
+        ? `Dash ${p.dashCooldown.toFixed(1)}s` : "Dash ready");
+      $("status"+i).textContent = effects.join(" · ");
+    });
+  }
+
+  function render() {
+    ctx.save();
+    if (shakeAmount > .1 && $("shake").checked && !$("motion").checked) {
+      ctx.translate(rand(-shakeAmount,shakeAmount), rand(-shakeAmount,shakeAmount));
+    }
+    drawArena();
+    drawPickups();
+    players.forEach(drawPlayer);
+    drawEffects();
+    ctx.restore();
+
+    if (state === "countdown") {
+      text(String(Math.max(1, Math.ceil(countdown))), W/2, H/2-95, 100);
+      text("GET READY", W/2, H/2-165, 20, "#b6d2ed");
+    }
+    if (state === "roundover") {
+      ctx.fillStyle = "#04081799";
+      ctx.fillRect(0, H/2-60, W, 120);
+      text(winnerText, W/2, H/2, 39, "#f0f8ff");
+    } else if (bannerTime > 0 && state === "play") {
+      text(banner, W/2, 94, banner.length > 25 ? 23 : 42, "#ffe8a5");
+    }
+  }
+
+  players = [createPlayer(0), createPlayer(1)];
+
+  // Fixed-timestep simulation; rendering follows the display refresh rate.
+  const STEP = 1/120;
+  let lastTime = performance.now();
+  let accumulator = 0;
+  let hudTimer = 0;
+
+  function frame(now) {
+    const dt = Math.min((now-lastTime)/1000, .05);
+    lastTime = now;
+    if (state !== "paused") visualTime += dt;
+
+    accumulator += dt;
+    while (accumulator >= STEP) {
+      update(STEP);
+      accumulator -= STEP;
+    }
+
+    hudTimer += dt;
+    if (hudTimer >= .05) {
+      updateHUD();
+      hudTimer = 0;
+    }
+
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  updateHUD();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
 </html>

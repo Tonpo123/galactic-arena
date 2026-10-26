@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Galactic Arena</title>
+    <style>
+      :root {
+        --bg-1: #040814;
+        --bg-2: #0d1732;
+        --panel: rgba(8, 12, 24, 0.8);
+        --border: rgba(164, 180, 255, 0.35);
+        --blue: #67d8ff;
+        --blue-2: #4aa7ff;
+        --red: #ff7373;
+        --red-2: #ff4d6d;
+        --green: #7ff7ae;
+        --gold: #ffd166;
+        --text: #edf6ff;
+        --shadow: rgba(0, 0, 0, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        height: 100%;
+        font-family: Arial, Helvetica, sans-serif;
+        background:
+          radial-gradient(circle at 20% 20%, rgba(98, 134, 255, 0.15), transparent 20%),
+          radial-gradient(circle at 80% 10%, rgba(255, 94, 127, 0.15), transparent 18%),
+          linear-gradient(180deg, var(--bg-1), var(--bg-2));
+        color: var(--text);
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+      }
+
+      #game-shell {
+        width: min(92vw, 1000px);
+      }
+
+      #hud {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+
+      .player-panel {
+        flex: 1;
+      }
+
+      .player-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .health-bar-wrap {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        height: 18px;
+        overflow: hidden;
+        box-shadow: inset 0 0 12px rgba(255,255,255,0.04);
+      }
+
+      .health-bar {
+        height: 100%;
+        width: 100%;
+        border-radius: inherit;
+        transition: width 0.14s ease;
+      }
+
+      .p1 .health-bar {
+        background: linear-gradient(90deg, var(--blue), var(--blue-2));
+      }
+
+      .p2 .health-bar {
+        background: linear-gradient(90deg, var(--red), var(--red-2));
+      }
+
+      #status {
+        min-width: 190px;
+        text-align: center;
+        font-size: 13px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: var(--gold);
+        text-shadow: 0 0 10px rgba(255, 209, 102, 0.7);
+      }
+
+      #arena {
+        position: relative;
+        width: 100%;
+        height: 560px;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgba(17, 25, 44, 0.24), rgba(7, 10, 19, 0.75)),
+          radial-gradient(circle at center, rgba(118, 163, 255, 0.16), transparent 30%),
+          linear-gradient(180deg, #070d18, #0a1222 40%, #070d18);
+        border: 2px solid var(--border);
+        border-radius: 22px;
+        box-shadow:
+          0 30px 70px var(--shadow),
+          inset 0 0 30px rgba(120, 146, 255, 0.08);
+      }
+
+      #arena::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(rgba(255,255,255,0.02), rgba(255,255,255,0.02)),
+          repeating-linear-gradient(
+            0deg,
+            rgba(255,255,255,0.025),
+            rgba(255,255,255,0.025) 2px,
+            transparent 2px,
+            transparent 10px
+          );
+        pointer-events: none;
+      }
+
+      #arena::after {
+        content: "";
+        position: absolute;
+        inset: 30px;
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 18px;
+        pointer-events: none;
+      }
+
+      .fighter {
+        position: absolute;
+        width: 42px;
+        height: 42px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        box-shadow: 0 0 20px rgba(255,255,255,0.18);
+      }
+
+      .fighter .core {
+        position: absolute;
+        inset: 8px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.18);
+      }
+
+      .fighter.p1 {
+        background: radial-gradient(circle at 30% 30%, #d7f8ff, #4bb3ff 56%, #143a72 100%);
+        border: 3px solid rgba(119, 228, 255, 0.9);
+      }
+
+      .fighter.p2 {
+        background: radial-gradient(circle at 30% 30%, #ffd3d3, #ff6a6a 56%, #6d1d29 100%);
+        border: 3px solid rgba(255, 145, 145, 0.9);
+      }
+
+      .fighter .saber {
+        position: absolute;
+        left: 18px;
+        top: 18px;
+        width: 72px;
+        height: 8px;
+        border-radius: 999px;
+        transform-origin: left center;
+        display: none;
+        box-shadow:
+          0 0 12px rgba(255,255,255,0.8),
+          0 0 21px rgba(140, 210, 255, 0.65);
+      }
+
+      .fighter.p1 .saber {
+        background: linear-gradient(90deg, #b5f7ff, #ffffff);
+      }
+
+      .fighter.p2 .saber {
+        background: linear-gradient(90deg, #ffd0d0, #fff3f3);
+      }
+
+      .fighter.attacking .saber {
+        display: block;
+      }
+
+      .medkit {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        background: linear-gradient(135deg, #a9ffd7, #49d77d);
+        transform: translate(-50%, -50%) rotate(45deg);
+        border: 2px solid rgba(11, 55, 27, 0.8);
+        box-shadow: 0 0 18px rgba(123, 247, 163, 0.8);
+      }
+
+      .medkit::before,
+      .medkit::after {
+        content: "";
+        position: absolute;
+        background: rgba(10, 44, 20, 0.9);
+        border-radius: 2px;
+      }
+
+      .medkit::before {
+        width: 2px;
+        height: 12px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .medkit::after {
+        width: 12px;
+        height: 2px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .pulse {
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid rgba(124, 255, 170, 0.5);
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-shell">
+      <div id="hud">
+        <div class="player-panel p1">
+          <div class="player-label">
+            <span>Player 1</span>
+            <span id="p1-health-text">100</span>
+          </div>
+          <div class="health-bar-wrap">
+            <div class="health-bar" id="p1-health"></div>
+          </div>
+        </div>
+
+        <div id="status">Fight!</div>
+
+        <div class="player-panel p2">
+          <div class="player-label">
+            <span>Player 2</span>
+            <span id="p2-health-text">100</span>
+          </div>
+          <div class="health-bar-wrap">
+            <div class="health-bar" id="p2-health"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="arena">
+        <div id="p1" class="fighter p1">
+          <div class="core"></div>
+          <div class="saber"></div>
+        </div>
+
+        <div id="p2" class="fighter p2">
+          <div class="core"></div>
+          <div class="saber"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const arena = document.getElementById("arena");
+      const statusEl = document.getElementById("status");
+      const p1Health = document.getElementById("p1-health");
+      const p2Health = document.getElementById("p2-health");
+      const p1HealthText = document.getElementById("p1-health-text");
+      const p2HealthText = document.getElementById("p2-health-text");
+
+      const arenaWidth = 1000;
+      const arenaHeight = 560;
+
+      const p1 = {
+        element: document.getElementById("p1"),
+        x: 180,
+        y: 280,
+        radius: 21,
+        speed: 220,
+        health: 100,
+        attackCooldown: 0,
+        attackTimer: 0,
+        facingX: 1,
+        facingY: 0,
+        name: "Player 1"
+      };
+
+      const p2 = {
+        element: document.getElementById("p2"),
+        x: 820,
+        y: 280,
+        radius: 21,
+        speed: 220,
+        health: 100,
+        attackCooldown: 0,
+        attackTimer: 0,
+        facingX: -1,
+        facingY: 0,
+        name: "Player 2"
+      };
+
+      let medkits = [];
+      let lastSpawnTime = 0;
+      let gameOver = false;
+      let roundDelay = 0;
+      let score = { p1: 0, p2: 0 };
+
+      const keys = {};
+
+      document.addEventListener("keydown", (event) => {
+        keys[event.code] = true;
+      });
+
+      document.addEventListener("keyup", (event) => {
+        keys[event.code] = false;
+      });
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      function updateHud() {
+        p1Health.style.width = `${p1.health}%`;
+        p2Health.style.width = `${p2.health}%`;
+        p1HealthText.textContent = Math.max(0, Math.round(p1.health));
+        p2HealthText.textContent = Math.max(0, Math.round(p2.health));
+      }
+
+      function setVisual(player) {
+        player.element.style.left = `${player.x}px`;
+        player.element.style.top = `${player.y}px`;
+
+        const saber = player.element.querySelector(".saber");
+        const angle = Math.atan2(player.facingY, player.facingX) * (180 / Math.PI);
+        saber.style.transform = `rotate(${angle}deg)`;
+
+        player.element.classList.toggle("attacking", player.attackTimer > 0);
+      }
+
+      function spawnMedkit() {
+        const x = 150 + Math.random() * (arenaWidth - 300);
+        const y = 120 + Math.random() * (arenaHeight - 220);
+        const medkit = {
+          x,
+          y,
+          pulse: 0,
+          elem: document.createElement("div")
+        };
+
+        medkit.elem.className = "medkit";
+        medkit.elem.style.left = `${x}px`;
+        medkit.elem.style.top = `${y}px`;
+        arena.appendChild(medkit.elem);
+
+        medkits.push(medkit);
+      }
+
+      function updateMedkits(dt) {
+        if (performance.now() - lastSpawnTime > 5000 && medkits.length < 4) {
+          lastSpawnTime = performance.now();
+          spawnMedkit();
+        }
+
+        for (let i = medkits.length - 1; i >= 0; i--) {
+          const med = medkits[i];
+          med.pulse += dt * 2.2;
+
+          med.elem.style.transform = `translate(-50%, -50%) rotate(45deg) scale(${1 + Math.sin(med.pulse) * 0.12})`;
+          med.elem.style.filter = `drop-shadow(0 0 ${12 + Math.sin(med.pulse) * 6}px rgba(123,247,163,0.8))`;
+
+          const d1 = Math.hypot(med.x - p1.x, med.y - p1.y);
+          const d2 = Math.hypot(med.x - p2.x, med.y - p2.y);
+
+          if (d1 < 26 || d2 < 26) {
+            if (d1 <= d2) {
+              p1.health = clamp(p1.health + 18, 0, 100);
+            } else {
+              p2.health = clamp(p2.health + 18, 0, 100);
+            }
+
+            med.elem.remove();
+            medkits.splice(i, 1);
+            statusEl.textContent = "Med kit collected!";
+          }
+        }
+
+        updateHud();
+      }
+
+      function tryAttack(attacker, defender) {
+        if (gameOver || attacker.attackCooldown > 0 || attacker.attackTimer > 0) return;
+
+        const dx = defender.x - attacker.x;
+        const dy = defender.y - attacker.y;
+        const dist = Math.hypot(dx, dy);
+
+        attacker.facingX = dist === 0 ? attacker.facingX : dx / dist;
+        attacker.facingY = dist === 0 ? attacker.facingY : dy / dist;
+
+        attacker.attackCooldown = 0.48;
+        attacker.attackTimer = 0.18;
+
+        if (dist < 82) {
+          defender.health -= 18;
+          const pushX = (dx / (dist || 1)) * 16;
+          const pushY = (dy / (dist || 1)) * 16;
+          defender.x = clamp(defender.x + pushX, 22, arenaWidth - 22);
+          defender.y = clamp(defender.y + pushY, 22, arenaHeight - 22);
+
+          if (defender.health <= 0) {
+            gameOver = true;
+            roundDelay = 1.6;
+            statusEl.textContent = `${attacker.name} wins!`;
+            score[attacker === p1 ? "p1" : "p2"] += 1;
+          } else {
+            statusEl.textContent = `${attacker.name} lands a hit!`;
+          }
+        } else {
+          statusEl.textContent = `${attacker.name} swings!`;
+        }
+      }
+
+      function resetPositions() {
+        p1.x = 180;
+        p1.y = 280;
+        p2.x = 820;
+        p2.y = 280;
+        p1.health = 100;
+        p2.health = 100;
+        p1.attackCooldown = 0;
+        p2.attackCooldown = 0;
+        p1.attackTimer = 0;
+        p2.attackTimer = 0;
+        p1.facingX = 1;
+        p1.facingY = 0;
+        p2.facingX = -1;
+        p2.facingY = 0;
+        gameOver = false;
+        statusEl.textContent = "Fight!";
+        updateHud();
+        setVisual(p1);
+        setVisual(p2);
+      }
+
+      function updatePlayer(player, controls, dt) {
+        let moveX = 0;
+        let moveY = 0;
+
+        if (keys[controls.left]) moveX -= 1;
+        if (keys[controls.right]) moveX += 1;
+        if (keys[controls.up]) moveY -= 1;
+        if (keys[controls.down]) moveY += 1;
+
+        if (moveX !== 0 || moveY !== 0) {
+          const length = Math.hypot(moveX, moveY) || 1;
+          const nx = moveX / length;
+          const ny = moveY / length;
+          player.x += nx * player.speed * dt;
+          player.y += ny * player.speed * dt;
+          player.x = clamp(player.x, 22, arenaWidth - 22);
+          player.y = clamp(player.y, 22, arenaHeight - 22);
+        }
+
+        if (keys[controls.attack]) {
+          if (player === p1) tryAttack(p1, p2);
+          else tryAttack(p2, p1);
+        }
+
+        player.attackCooldown = Math.max(0, player.attackCooldown - dt);
+        player.attackTimer = Math.max(0, player.attackTimer - dt);
+
+        setVisual(player);
+      }
+
+      function loop() {
+        const dt = 1 / 60;
+
+        if (gameOver) {
+          roundDelay -= dt;
+          if (roundDelay <= 0) resetPositions();
+        } else {
+          updatePlayer(p1, { left: "KeyA", right: "KeyD", up: "KeyW", down: "KeyS", attack: "KeyF" }, dt);
+          updatePlayer(p2, { left: "ArrowLeft", right: "ArrowRight", up: "ArrowUp", down: "ArrowDown", attack: "Slash" }, dt);
+        }
+
+        updateMedkits(dt);
+        requestAnimationFrame(loop);
+      }
+
+      resetPositions();
+      spawnMedkit();
+      spawnMedkit();
+      updateHud();
+      requestAnimationFrame(loop);
+    </script>
+  </body>
+</html>
